@@ -25,7 +25,7 @@ public class SeatsManager {
     private final Queue<Ticket> waitingQueue = new LinkedList<>();
 //    private final Map<String, Ticket> ticketMap = new HashMap<>();
     private int seatStartNumber;
-    private int seatEndNumber;
+//    private int seatEndNumber;
 
     public SeatsManager() {
     }
@@ -43,7 +43,7 @@ public class SeatsManager {
             return seats[index];
         });
         this.seatStartNumber = start;
-        this.seatEndNumber = end;
+//        this.seatEndNumber = end;
         this.coachName = "UR";
         logger.info("SEATS ARE CREATED WITH THE COUNT OF : '{}', AND COACH NAME IS : {}", this.seats.length, this.coachName);
     }
