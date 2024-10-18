@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: railway-reservation-system
+  datasource:
+    url: jdbc:mysql://localhost:3306/springbootlearning
+    username: springbootuser
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+server:
+  port: 8080
+
+train:
+  start: A
+  end: Z
+  count:
+    seats: 8
+    wait: 10
