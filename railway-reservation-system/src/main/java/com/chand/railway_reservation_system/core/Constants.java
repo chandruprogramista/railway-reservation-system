@@ -17,7 +17,7 @@ public class Constants {
     @Value("${train.end}")
     private String end;
 
-    @Value("${train.count.wait}")
+    @Value("${train.count.waiting-upper-bound}")
     private int max_wait_count;
 
     @Value("${train.count.seats}")

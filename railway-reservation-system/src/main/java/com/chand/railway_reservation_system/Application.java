@@ -13,44 +13,44 @@ import java.util.Objects;
 public class Application {
 
 	public static void main(String[] args) {
-//		SpringApplication.run(Application.class, args);
-		Collection<Integer> t = new Tree<>();
-		int[] arr = {7, 3, 20, 1, 5};
-
-		for (int i : arr)
-			t.add(i);
-
-		System.out.println(t);
-
-		t.add(6);
-
-		System.out.println(t);
-		t.add(21);
-		t.add(22);
-
-		System.out.println(t);
-		System.out.println(Tree.preAddCheck(t, 0));
-		System.out.println(Tree.preAddCheck(t, 4));
-
-		System.out.println(t.remove(6));
-
-		System.out.println(t);
-
-		Collection<Passenger> p = new Tree<>();
-
-		int[][] arrr = {
-				{9, 12},
-				{1, 3},
-				{5, 9},
-				{13, 20},
-				{21, 23}
-		};
-
-		for (int i = 0; i < arrr.length; i++) {
-			System.out.println(p.add(new Passenger("chand - " + i, "" + (('A' + arrr[i][0]) - 1), "" + (('A' + arrr[i][1]) - 1), 2)));
-		}
-
-		System.out.println(p);
+		SpringApplication.run(Application.class, args);
+//		Collection<Integer> t = new Tree<>();
+//		int[] arr = {7, 3, 20, 1, 5};
+//
+//		for (int i : arr)
+//			t.add(i);
+//
+//		System.out.println(t);
+//
+//		t.add(6);
+//
+//		System.out.println(t);
+//		t.add(21);
+//		t.add(22);
+//
+//		System.out.println(t);
+//		System.out.println(Tree.preAddCheck(t, 0));
+//		System.out.println(Tree.preAddCheck(t, 4));
+//
+//		System.out.println(t.remove(6));
+//
+//		System.out.println(t);
+//
+//		Collection<Passenger> p = new Tree<>();
+//
+//		int[][] arrr = {
+//				{9, 12},
+//				{1, 3},
+//				{5, 9},
+//				{13, 20},
+//				{21, 23}
+//		};
+//
+//		for (int i = 0; i < arrr.length; i++) {
+//			System.out.println(p.add(new Passenger("chand - " + i, "" + (('A' + arrr[i][0]) - 1), "" + (('A' + arrr[i][1]) - 1), 2)));
+//		}
+//
+//		System.out.println(p);
 
 		// (obj1, obj2) -> obj1.snd[1] <= obj2.snd[0] ? -1 : obj1.snd[0] >= obj2.snd[1] ? 1 : 0
 //		Collection<Dummy> d = new Tree<>();

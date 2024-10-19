@@ -11,6 +11,7 @@ public class Tree<T> implements Collection<T> {
     private int size;
     private boolean insertionFlag;
     private boolean removalFlag;
+    private int id;
 
     private static final class Node<T> {
         Node<T> left;
@@ -37,8 +38,16 @@ public class Tree<T> implements Collection<T> {
     public Tree() {
     }
 
+    public Tree (int seatNumber) {
+        this.id = seatNumber;
+    }
+
     public Tree(Comparator<T> comparator) {
         this.comparator = comparator;
+    }
+
+    public int getId() {
+        return id;
     }
 
     @Override

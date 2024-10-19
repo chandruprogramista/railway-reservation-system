@@ -14,7 +14,12 @@ server:
 
 train:
   start: A
-  end: Z
+  end: E
+  total-stations: 5
   count:
-    seats: 8
-    wait: 10
+    max-passengers-for-single-booking: 8
+    waiting-upper-bound: 50
+  seats:
+    start: 1
+    end: 9
+  coach-name: UR
