@@ -8,8 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 import java.util.function.Predicate;
 
 @Component
@@ -22,12 +21,14 @@ public class SingleQueue implements Queuer<Passenger> {
     private final int totalStations;
 
     @Autowired
-    public SingleQueue (@Value("${train.total-stations}") int totalStations) {
+    public SingleQueue(@Value("${train.total-stations}") int totalStations) {
         this.totalStations = totalStations;
+        //TEST
+        init();
     }
 
     @PostConstruct
-    public void init () {
+    public void init() {
         this.queue = new LinkedList<>();
         this.waitingTracker = new int[this.totalStations - 1][];
         for (int i = 0; i < this.totalStations - 1; i++) this.waitingTracker[i] = new int[this.totalStations - i - 1];
@@ -37,27 +38,63 @@ public class SingleQueue implements Queuer<Passenger> {
     public void add(Passenger element) {
         this.queue.add(element);
         int[] temp = element.getSourceAndDestination();
-        ++this.waitingTracker[temp[0]][temp[1]];
+        this.waitingTracker[temp[0]][temp[1] - 1 - temp[0]] += element.getWaitingCount();
+        // test
+//        System.out.println("hit - " + temp[0] + " - " + temp[1]);
+        System.out.println(Arrays.deepToString(this.waitingTracker));
     }
 
     @Override
-    public void remove(Passenger element, boolean partial) {
-        this.queue.remove(element);
+    public void remove(Passenger element, OptionalInt waitingCount, Optional<Iterator<Passenger>> iterator) {
+        waitingCount.ifPresent(count -> {
+
+            if (count == element.getWaitingCount()) {
+                iterator.ifPresentOrElse(
+                        Iterator::remove,
+                        () -> this.queue.remove(element)
+                );
+            }
+
+            int[] temp = element.getSourceAndDestination();
+            this.waitingTracker[temp[0]][temp[1] - temp[0] - 1] -= count;
+        });
     }
 
     @Override
     public void checkAndAdd(Predicate<Passenger> predicate, Tree<Passenger> seat) {
-        this.queue.forEach(passenger -> {
-            if (predicate.test(passenger)) {
+
+        Iterator<Passenger> iterator = this.queue.iterator();
+
+        while (iterator.hasNext()) {
+            Passenger passenger = null;
+            if (predicate.test(passenger = iterator.next())) {
                 seat.add(passenger);
                 int waitingCount = passenger.getWaitingCount();
-                if (--waitingCount <= 0) {
-                    this.remove(passenger, false);
+                // we have a waiting count
+                if (waitingCount-- >= 0) {
+                    this.remove(passenger, OptionalInt.of(1), Optional.of(iterator));
                     passenger.setWaitingCount(waitingCount);
-                    int[] temp = passenger.getSourceAndDestination();
-                    --this.waitingTracker[temp[0]][temp[1]];
                 }
             }
-        });
+        }
+
+//        this.queue.forEach(passenger -> {
+//            if (predicate.test(passenger)) {
+//                seat.add(passenger);
+//                int waitingCount = passenger.getWaitingCount();
+//                // we have a waiting count
+//                if (waitingCount-- >= 0) {
+//                    this.remove(passenger, OptionalInt.of(1), Optional.empty());
+//                    passenger.setWaitingCount(waitingCount);
+//                }
+//            }
+//        });
+    }
+
+    @Override
+    public int getWaitingCount(String source, String destination) {
+        int s = source.charAt(0) - 'A';
+        int d = destination.charAt(0) - 'A';
+        return this.waitingTracker[s][d - 1 - s];
     }
 }

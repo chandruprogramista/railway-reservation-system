@@ -29,12 +29,7 @@ public class SeatManager {
     // exclusive
     private final int seatsEnds;
 
-    // total stations
-    private final int totalStations;
-
     private final int MAX_PASSENGERS_FOR_SINGLE_BOOK;
-
-    private int[][] waitingTracker;
 
     // actual seats
     private Tree<Passenger>[] seats;
@@ -48,15 +43,15 @@ public class SeatManager {
     public SeatManager(@Value("${train.coach-name}") String coachName,
                        @Value("${train.seats.start}") int start,
                        @Value("${train.seats.end}") int end,
-                       @Value("${train.total-stations}") int totalStations,
                        @Value("${train.max-passengers-for-single-booking}") int var,
                        @Qualifier("singleQueue") Queuer<Passenger> queue) {
         this.coachName = coachName;
         this.seatStarts = start;
         this.seatsEnds = end;
-        this.totalStations = totalStations;
         this.MAX_PASSENGERS_FOR_SINGLE_BOOK = var;
         this.waitingQueue = queue;
+        // TEST
+        init();
     }
 
     @PostConstruct
@@ -74,7 +69,7 @@ public class SeatManager {
         List<Integer> seatsAllocation = new ArrayList<>();
         int requireSeats = passenger.getTravelersCount();
 
-        for (int i = 0; i < this.seats.length && requireSeats < passenger.getTravelersCount(); i++) {
+        for (int i = 0; i < this.seats.length && requireSeats > 0; i++) {
             if (Tree.preAddCheck(this.seats[i], passenger)) {
                 seatsAllocation.add(this.seats[i].getId());
                 --requireSeats;
@@ -87,17 +82,18 @@ public class SeatManager {
         }
 
         passenger.setSeatsAllocation(seatsAllocation);
+        this.logger.info("SEATS ARE ALLOCATED FOR NAME : '{}', AND SEATS NUMBERS : '{}'", passenger.getName(), seatsAllocation);
         return Optional.of(seatsAllocation);
     }
 
     public void bookSeats(List<Integer> seatsAllocation, Passenger passenger) {
         seatsAllocation.forEach(seatNumber -> this.seats[seatNumber - this.seatStarts].add(passenger));
-        this.logger.info("SEATS ARE ALLOCATED FOR NAME : {}", passenger.getName());
+        this.logger.info("SEATS ARE BOOKED SUCCESSFULLY FOR : '{}'", passenger.getName());
     }
 
     public void cancelSeats(int countToBeDeleted, Passenger passenger, boolean waitingDeletionFirst) {
 
-        if (countToBeDeleted > passenger.getTravelersCount()) {
+        if (countToBeDeleted > passenger.getTravelersCount() || countToBeDeleted < 0) {
             this.logger.info("PASSENGERS COUNT TOO SMALL TO CANCEL 'COUNT TO WANT CANCEL : {}', 'ACTUAL PASSENGERS COUNT : {}'", countToBeDeleted, passenger.getTravelersCount());
             return;
         }
@@ -112,12 +108,14 @@ public class SeatManager {
         if (waitingDeletionFirst) {
             int waitingCount = passenger.getWaitingCount();
             countToBeDeleted -= waitingCount;
-            passenger.setWaitingCount(countToBeDeleted >= 0 ? 0 : -countToBeDeleted);
             if (countToBeDeleted >= 0) {
-                this.waitingQueue.remove(passenger, false);
-                if (countToBeDeleted > 0)
-                    this.cancelHelper(passenger, countToBeDeleted);
+                this.waitingQueue.remove(passenger, OptionalInt.of(passenger.getWaitingCount()), Optional.empty());
+                this.cancelHelper(passenger, countToBeDeleted);
             }
+            else {
+                this.waitingQueue.remove(passenger, OptionalInt.of(cancelCount), Optional.empty());
+            }
+            passenger.setWaitingCount(countToBeDeleted >= 0 ? 0 : -countToBeDeleted);
             passenger.setTravelersCount(passenger.getTravelersCount() - cancelCount);
         } else {
             // pass
@@ -126,19 +124,26 @@ public class SeatManager {
 
     public void cancelSeats (Passenger passenger) {
         if (passenger.getWaitingCount() > 0)
-            this.waitingQueue.remove(passenger, false);
+            this.waitingQueue.remove(passenger, OptionalInt.of(passenger.getWaitingCount()), Optional.empty());
 
         this.cancelHelper(passenger, passenger.getSeatsAllocation().size());
     }
 
     public void cancelHelper (Passenger passenger, int countToBeDeleted) {
-        List<Integer> seatsAllocation = passenger.getSeatsAllocation().subList(0, countToBeDeleted);
-        seatsAllocation.forEach(seatNumber -> {
-            Tree<Passenger> seat = this.seats[seatNumber - this.seatStarts];
-            seat.remove(passenger);
-            this.waitingQueue.checkAndAdd(
-                    passengerElement -> Tree.preAddCheck(seat, passengerElement),
-                    seat);
-        });
+        if (countToBeDeleted > 0) {
+            List<Integer> seatsAllocation = passenger.getSeatsAllocation().subList(0, countToBeDeleted);
+            seatsAllocation.forEach(seatNumber -> {
+                Tree<Passenger> seat = this.seats[seatNumber - this.seatStarts];
+                seat.remove(passenger);
+                this.waitingQueue.checkAndAdd(
+                        passengerElement -> Tree.preAddCheck(seat, passengerElement),
+                        seat);
+            });
+        }
+    }
+
+    // UTILS
+    public int getWaitingCount (String source, String destination) {
+        return this.waitingQueue.getWaitingCount(source, destination);
     }
 }

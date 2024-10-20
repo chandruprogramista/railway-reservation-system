@@ -78,6 +78,19 @@ public class Passenger implements Comparable<Passenger> {
         this.sourceAndDestination[1] = source.charAt(1) - 'A';
     }
 
+    // testing only
+    public Passenger(String pnr, String name, String source, String destination, int travelersCount) {
+        this.PNRId = pnr;
+        this.source = source;
+        this.destination = destination;
+        this.name = name;
+        this.travelersCount = travelersCount;
+        this.initialTravelersCount = travelersCount;
+
+        this.sourceAndDestination[0] = source.charAt(0) - 'A';
+        this.sourceAndDestination[1] = destination.charAt(0) - 'A';
+    }
+
     public int[] getSourceAndDestination() {
         return sourceAndDestination;
     }
