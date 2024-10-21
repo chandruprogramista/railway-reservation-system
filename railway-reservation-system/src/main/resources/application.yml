@@ -18,6 +18,7 @@ train:
   total-stations: 5
   count:
     max-passengers-for-single-booking: 8
+    min-passengers-for-single-booking: 1
     waiting-upper-bound: 50
   seats:
     start: 1

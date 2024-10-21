@@ -1,13 +1,7 @@
 package com.chand.railway_reservation_system;
 
-import com.chand.railway_reservation_system.core.datastructure.Tree;
-import com.chand.railway_reservation_system.core.entity.Passenger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Objects;
 
 @SpringBootApplication
 public class Application {

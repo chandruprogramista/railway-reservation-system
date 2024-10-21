@@ -1,6 +1,6 @@
-package com.chand.railway_reservation_system.core.manager;
+package com.chand.railway_reservation_system.core.manager.queues;
 
-import com.chand.railway_reservation_system.core.datastructure.Tree;
+import com.chand.railway_reservation_system.core.datastructure.Seat;
 import com.chand.railway_reservation_system.core.entity.Passenger;
 import com.chand.railway_reservation_system.core.templates.Queuer;
 import jakarta.annotation.PostConstruct;
@@ -23,8 +23,6 @@ public class SingleQueue implements Queuer<Passenger> {
     @Autowired
     public SingleQueue(@Value("${train.total-stations}") int totalStations) {
         this.totalStations = totalStations;
-        //TEST
-        init();
     }
 
     @PostConstruct
@@ -39,29 +37,27 @@ public class SingleQueue implements Queuer<Passenger> {
         this.queue.add(element);
         int[] temp = element.getSourceAndDestination();
         this.waitingTracker[temp[0]][temp[1] - 1 - temp[0]] += element.getWaitingCount();
-        // test
-//        System.out.println("hit - " + temp[0] + " - " + temp[1]);
-        System.out.println(Arrays.deepToString(this.waitingTracker));
+//        DEBUG
+//        System.out.println(Arrays.deepToString(this.waitingTracker));
     }
 
     @Override
     public void remove(Passenger element, OptionalInt waitingCount, Optional<Iterator<Passenger>> iterator) {
-        waitingCount.ifPresent(count -> {
 
+        waitingCount.ifPresent(count -> {
             if (count == element.getWaitingCount()) {
                 iterator.ifPresentOrElse(
                         Iterator::remove,
                         () -> this.queue.remove(element)
                 );
             }
-
             int[] temp = element.getSourceAndDestination();
             this.waitingTracker[temp[0]][temp[1] - temp[0] - 1] -= count;
         });
     }
 
     @Override
-    public void checkAndAdd(Predicate<Passenger> predicate, Tree<Passenger> seat) {
+    public void checkAndAdd(Predicate<Passenger> predicate, Seat<Passenger> seat) {
 
         Iterator<Passenger> iterator = this.queue.iterator();
 
@@ -70,25 +66,12 @@ public class SingleQueue implements Queuer<Passenger> {
             if (predicate.test(passenger = iterator.next())) {
                 seat.add(passenger);
                 int waitingCount = passenger.getWaitingCount();
-                // we have a waiting count
                 if (waitingCount-- >= 0) {
                     this.remove(passenger, OptionalInt.of(1), Optional.of(iterator));
                     passenger.setWaitingCount(waitingCount);
                 }
             }
         }
-
-//        this.queue.forEach(passenger -> {
-//            if (predicate.test(passenger)) {
-//                seat.add(passenger);
-//                int waitingCount = passenger.getWaitingCount();
-//                // we have a waiting count
-//                if (waitingCount-- >= 0) {
-//                    this.remove(passenger, OptionalInt.of(1), Optional.empty());
-//                    passenger.setWaitingCount(waitingCount);
-//                }
-//            }
-//        });
     }
 
     @Override

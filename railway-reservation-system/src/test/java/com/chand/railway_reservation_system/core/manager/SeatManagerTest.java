@@ -1,6 +1,7 @@
 package com.chand.railway_reservation_system.core.manager;
 
 import com.chand.railway_reservation_system.core.entity.Passenger;
+import com.chand.railway_reservation_system.core.manager.queues.SingleQueue;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +13,7 @@ import static org.assertj.core.api.Assertions.*;
 
 class SeatManagerTest {
 
-    SeatManager seatManager = new SeatManager("UR", 1, 8, 8, new SingleQueue(5));
+    SeatsManager seatManager = new SeatsManager("UR", 1, 8, new SingleQueue(5));
 
     Logger logger = LoggerFactory.getLogger(SeatManagerTest.class);
 
@@ -27,15 +28,15 @@ class SeatManagerTest {
             new Passenger("8", "balaji", "A", "E", 5)
     );
 
-    List<Optional<List<Integer>>> expectedResultGetSeats = List.of(
-            Optional.of(List.of(1, 2)),
-            Optional.of(List.of(1, 2, 3)),
-            Optional.of(List.of(4, 5, 6)),
-            Optional.of(List.of(7, 8)),
-            Optional.empty(),
-            Optional.of(List.of(3, 4, 5, 6, 7, 8)),
-            Optional.of(List.of(4, 5, 6)),
-            Optional.of(List.of())
+    List<List<Integer>> expectedResultGetSeats = List.of(
+            List.of(1, 2),
+            List.of(1, 2, 3),
+            List.of(4, 5, 6),
+            List.of(7, 8),
+            List.of(),
+            List.of(3, 4, 5, 6, 7, 8),
+            List.of(4, 5, 6),
+            List.of()
     );
 
     int index = 0;
@@ -44,8 +45,8 @@ class SeatManagerTest {
     void getSeatsAndBook () {
         logger.info(" --- Get Seat And Book --- ");
         getSeatlist.forEach(passenger -> {
-           Optional<List<Integer>> ls = seatManager.getSeats(passenger);
-           ls.ifPresent(integers -> seatManager.bookSeats(integers, passenger));
+           List<Integer> ls = seatManager.getSeats(passenger);
+           seatManager.bookSeats(ls, passenger);
            assertThat(ls).isEqualTo(expectedResultGetSeats.get(index++));
         });
     }

@@ -1,31 +1,21 @@
 package com.chand.railway_reservation_system.core.datastructure;
 
-import com.chand.railway_reservation_system.core.entity.PNRPair;
-import com.chand.railway_reservation_system.core.templates.IntervalTree;
-
 import java.util.*;
 
-// Store the objects in the AVL-Tree format
-public class Seat<T> implements IntervalTree<T> {
+public class Seat<T> implements Collection<T> {
 
     private Node<T> root;
-    private Comparator<PNRPair> comparator;
-    private int seatNumber;
+    private Comparator<T> comparator;
     private int size;
+    private boolean insertionFlag;
+    private boolean removalFlag;
+    private int id;
 
-    private static class Node<T> {
+    private static final class Node<T> {
         Node<T> left;
         Node<T> right;
         int height;
         T value;
-
-        @Override
-        public String toString() {
-            return "Node{" +
-                    "height=" + height +
-                    ", value=" + value +
-                    '}';
-        }
 
         public Node(T value) {
             this.value = value;
@@ -33,237 +23,130 @@ public class Seat<T> implements IntervalTree<T> {
             this.right = null;
             this.height = 1;
         }
-    }
 
-    public Seat() {}
-
-    public Seat(int seatNumber) { this.seatNumber = seatNumber; }
-
-    public Seat(int seatNumber, T initialNode) {
-        this(seatNumber, initialNode, null);
-    }
-
-    public Seat(int seatNumber, T initialNode, Comparator<PNRPair> comparator) {
-        // checks it is the interleavable instance
-        isInterleaveIns(initialNode);
-        this.seatNumber = seatNumber;
-        this.comparator = comparator;
-        this.root = createNode(initialNode);
-    }
-
-    public Seat(Comparator<PNRPair> comparator) {
-        this.comparator = comparator;
-    }
-
-    public boolean add(T value) {
-        // if root is null
-        if (this.root == null) {
-            this.root = createNode(value);
-            ++size;
-            return true;
+        @Override
+        public String toString() {
+            return "Node{" +
+                    "value=" + value +
+                    ", height=" + height +
+                    '}';
         }
-        // pre-check is used to check if there is a space to insert the "new value"
-        // if it not then there is no room, so return false
-        if (!preAddCheck(this, (PNRPair)value))
-            return false;
-
-        // add the "new value"
-        this.root = add(this.root, value);
-        ++size;
-        return true;
     }
 
-    // return the new root if the root is modified or else normally return the this.root
-    private Node<T> add(Node<T> root, T value) {
-
-        // if root is null we reach the end so we need to create the node
-        if (root == null)
-            return createNode(value);
-
-        // compare the two node (comparator : "default", value : "to be inserted", root : "current node in the tree")
-        // comparison is come from the "comparator" if it not then "comparable"
-        int comparedValue = compareInterleave(comparator, (PNRPair)value, (PNRPair)root.value);
-
-        // move left
-        if (comparedValue < 0)
-            root.left = add(root.left, value);
-            // move right
-        else if (comparedValue > 0)
-            root.right = add(root.right, value);
-        // it is not a valid interval to insert
-        // case 1 : the interval is already inserted
-        // case 2 : the interval is overlapped
-        // we know that the incoming node is going to be successfully insert
-        // so that the else condition is not necessary
-//        else
-//            return root;
-
-        // the every node's height is must be updated in back-tracking
-        // update the height of the current root
-        root.height = 1 + getMaxHeight(root);
-        return makeRotation (root);
+    public Seat() {
     }
 
-    public int getSeatNumber() {
-        return seatNumber;
+    public Seat(int seatNumber) {
+        this.id = seatNumber;
     }
 
-    public void setSeatNumber(int seatNumber) {
-        this.seatNumber = seatNumber;
+    public Seat(Comparator<T> comparator) {
+        this.comparator = comparator;
+    }
+
+    public int getId() {
+        return id;
     }
 
     @Override
-    public List<T> getAll() {
-
-        List<T> list = new ArrayList<>();
-        Stack<Node<T>> stack = new Stack<>();
-        Node<T> tempRoot = this.root;
-
-        while (true) {
-
-            if (tempRoot != null) {
-                stack.push(tempRoot);
-                tempRoot = tempRoot.left;
-            }
-
-            else {
-                if (stack.isEmpty())
-                    break;
-
-                Node<T> temp = stack.pop();
-                list.add(temp.value);
-                tempRoot = temp.right;
-            }
-        }
-
-        return list;
+    public int size() {
+        return this.size;
     }
 
-    public boolean contains(T searchObject) {
-        Objects.requireNonNull(searchObject, "Search object cannot be empty");
-        return contains(this.root, searchObject);
+    @Override
+    public boolean isEmpty() {
+        return size == 0;
     }
 
-    private boolean contains(Node<T> root, T searchObject) {
-        while (root != null) {
-            // USE OF "isEqual"
-            // Because we need to find a way to equalize the two object
-            // We know all the object inside the IntervalAVLTree is the child of Interleavable
-            // So I use the interleavable to compare the two objects to give the positive result to caller
-            if (isEqual((PNRPair)searchObject, (PNRPair)root.value))
+    @Override
+    public boolean contains(Object o) {
+        return contains(this.comparator, this.root, ((T)o));
+    }
+
+    private static <T> boolean contains (Comparator<T> comparator, Node<T> root, T element) {
+        Node<T> tempRoot = root;
+        while (tempRoot != null) {
+            if (element.equals(root.value))
                 return true;
-            int comparedValue = compareInterleave(comparator, (PNRPair)searchObject, (PNRPair)root.value);
-            // go to left
-            if (comparedValue < 0)
-                root = root.left;
-                // go right
-            else if (comparedValue > 0)
-                root = root.right;
-            else
+            int comparedValue = compareElements(comparator, element, root.value);
+
+            if (comparedValue == 0)
                 break;
+
+            tempRoot = comparedValue < 0 ? tempRoot.left : tempRoot.right;
         }
 
         return false;
     }
 
-    public boolean remove(T obj) {
-        if (this.root == null) {
-//            System.out.printf("seat : %s 1", this.seatNumber);
-            return false;
-        }
-        // pre-check of the deletion
-        if (!contains(obj)) {
-//            System.out.printf("seat : %s 2", this.seatNumber);
-            return false;
-        }
-
-        this.root = remove(this.root, obj);
-        --size;
-        return true;
-    }
-
-    private Node<T> remove(Node<T> root, T keyObj) {
-
-        if (root == null)
-            return null;
-
-        int compareValue = compareInterleave(comparator, (PNRPair)keyObj, (PNRPair)root.value);
-
-        // go left
-        if (compareValue < 0)
-            root.left = remove(root.left, keyObj);
-            // go right
-        else if (compareValue > 0)
-            root.right = remove(root.right, keyObj);
-            // the compareValue = 0 cause in two scenario
-            // 1 -> the "keyObj" is "overlap" the current root
-            // 2 -> the "keyObj" "match" the current root
-        else {
-            // we found the node to be deleted
-            if (isEqual((PNRPair)keyObj, (PNRPair)root.value)) {
-
-                if (root.left == null)
-                    return root.right;
-
-                if (root.right == null)
-                    return root.left;
-
-                Node<T> tempNode = root.right;
-                // find the left most to replace the node that we want to delete
-                while (tempNode.left != null)
-                    tempNode = tempNode.left;
-
-                root.value = tempNode.value;
-                // from root.right -> we need to delete the leaf node that we replaced with the current root
-                root.right = remove(root.right, tempNode.value);
-            }
-        }
-
-        // from this point we need do update the height the current root
-        root.height = 1 + getMaxHeight(root);
-        return makeRotation (root);
+    @Override
+    public Iterator<T> iterator() {
+        return null;
     }
 
     @Override
-    public int size() {
-        return size;
+    public Object[] toArray() {
+        return new Object[0];
     }
 
-    // --- UTILITIES ---
-    // interleave node check
-    private static <T> void isInterleaveIns(T node) {
-        try {
-            @SuppressWarnings("unchecked")
-            PNRPair dummy = (PNRPair) node;
-        } catch (ClassCastException exception) {
-            throw new ClassCastException("it is not a interleave node");
+    @Override
+    public <T1> T1[] toArray(T1[] a) {
+        return null;
+    }
+
+    @Override
+    public boolean add(T element) {
+        Objects.requireNonNull(element);
+        // if root is null
+        this.root = add(this.root, element);
+
+        if (this.insertionFlag) {
+            this.insertionFlag = false;
+            this.size++;
+            return true;
         }
+        return false;
     }
 
-    private static <T> Node<T> createNode(T value) {
-        return new Node<>(value);
-    }
+    private Node<T> add(Node<T> root, T value) {
 
-    private static <T> int compareInterleave(Comparator<PNRPair> comparator, PNRPair toBeInsert, PNRPair current) {
-        if (comparator != null)
-            return comparator.compare(toBeInsert, current);
+        // if root is null we reach the end so we need to create the node
+        if (root == null) {
+            this.insertionFlag = true;
+            return new Node<>(value);
+        }
 
-        @SuppressWarnings("unchecked")
-        Comparable<PNRPair> comparable = (Comparable<PNRPair>) toBeInsert;
-        return comparable.compareTo(current);
-    }
+        int comparedValue = compareElements(comparator, value, root.value);
 
-    // AVL-UTILS
-    private static <T> int height(Node<T> node) {
-        return node == null ? 0 : node.height;
-    }
+        if (comparedValue == 0)
+            return root;
+        // move left
+        else if (comparedValue < 0)
+            root.left = add(root.left, value);
+        // move right
+        else
+            root.right = add(root.right, value);
 
-    private static <T> int balanceLevel(Node<T> node) {
-        return node == null ? 0 : height(node.left) - height(node.right);
+        if (this.insertionFlag) {
+            root.height = 1 + getMaxHeight(root);
+            return makeRotation(root);
+        }
+
+        return root;
     }
 
     private static <T> int getMaxHeight(Node<T> node) {
         return Math.max(height(node.left), height(node.right));
+    }
+
+    private static <T> int height(Node<T> node) {
+        return node == null ? 0 : node.height;
+    }
+
+    private static <T> int compareElements (Comparator<T> comparator, T obj1, T obj2) {
+        if (comparator != null)
+            return comparator.compare(obj1, obj2);
+        return ((Comparable<T>) obj1).compareTo(obj2);
     }
 
     private static <T> Node<T> rightRotate(Node<T> node) {
@@ -292,26 +175,29 @@ public class Seat<T> implements IntervalTree<T> {
         return tempRoot;
     }
 
+    private static <T> int balanceFactor(Node<T> node) {
+        return node == null ? 0 : height(node.left) - height(node.right);
+    }
+
     private static <T> Node<T> makeRotation (Node<T> root) {
         // calculate the balance level
         // balancing thing is only happen when the balance >= 1 || <= -1
         // after the update of the height we need to check the balance of the current root
-        int balanceLevel = balanceLevel(root);
+        int balanceLevel = balanceFactor(root);
 
         // left
         if (balanceLevel > 1) {
-            int leftBalanceLevel = balanceLevel(root.left);
+            int leftBalanceLevel = balanceFactor(root.left);
             // left
             if (leftBalanceLevel >= 0)
                 return rightRotate(root);
             // right
             root.left = leftRotate(root.left);
-            // bug
-            return rightRotate(root.right);
+            return rightRotate(root);
         }
         // right
         else if (balanceLevel < -1) {
-            int rightBalanceLevel = balanceLevel(root.right);
+            int rightBalanceLevel = balanceFactor(root.right);
             // right
             if (rightBalanceLevel <= 0)
                 return leftRotate(root);
@@ -323,35 +209,128 @@ public class Seat<T> implements IntervalTree<T> {
         return root;
     }
 
-    private static <T> boolean isEqual(PNRPair target, PNRPair current) {
-        return target.equals(current);
+    public static <T> boolean preAddCheck(Collection<Integer> t, T i) {
+        return preAddCheck((Seat<T>)t, i);
     }
 
-    // Used to check if there is room for inserting the element
-    // because we want pre-check the element has a space to insert into the tree
-    public static <T> boolean preAddCheck(Seat<T> currentObject, PNRPair object) {
-        // avoid the original root gets modified
-        Node<T> node = currentObject.root;
-        while (node != null) {
-            int compareValue = compareInterleave(currentObject.comparator, (PNRPair)object, (PNRPair)node.value);
-            if (compareValue < 0)
-                node = node.left;
-            else if (compareValue > 0)
-                node = node.right;
-            else
-                return false;
+    public static <T> boolean preAddCheck (Seat<T> node, T element) {
+
+        Node<T> root = node.root;
+
+        while (root != null) {
+            int comparedValue = compareElements(node.comparator, element, root.value);
+            if (comparedValue == 0)
+                break;
+            root = comparedValue > 0 ? root.right : root.left;
         }
 
-        return true;
+        return root == null;
+    }
+
+    @Override
+    public boolean remove(Object o) {
+
+        this.root = remove(this.root, (T) o);
+
+        if (this.removalFlag) {
+            this.removalFlag = false;
+            this.size--;
+            return true;
+        }
+        return false;
+    }
+
+    private Node<T> remove (Node<T> root, T element) {
+
+        if (root == null) {
+            return null;
+        }
+
+        int comparedValue = compareElements(this.comparator, element, root.value);
+
+        if (comparedValue < 0) {
+            root.left = this.remove (root.left, element);
+        }
+
+        else if (comparedValue > 0) {
+            root.right = this.remove (root.right, element);
+        }
+
+        // in common case the else condition is triggered when the element is matched
+        else {
+            if (element.equals(root.value)) {
+                this.removalFlag = true;
+                if (root.left == null)
+                    return root.right;
+
+                if (root.right == null)
+                    return root.left;
+
+                Node<T> tempNode = root.right;
+                // find the left most to replace the node that we want to delete
+                while (tempNode.left != null)
+                    tempNode = tempNode.left;
+
+                root.value = tempNode.value;
+                // from root.right -> we need to delete the leaf node that we replaced with the current root
+                // element is removed
+                root.right = this.remove(root.right, tempNode.value);
+            }
+        }
+
+        // we know from the removalFlag that the node has been deleted
+        if (this.removalFlag) {
+            root.height = 1 + getMaxHeight(root);
+            return makeRotation(root);
+        }
+
+        return root;
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+        return false;
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends T> c) {
+        return false;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        return false;
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        return false;
+    }
+
+    @Override
+    public void clear() {
+
+    }
+
+    private void inorder (Node<T> node, StringBuilder sb) {
+
+        if (node == null)
+            return;
+
+        inorder(node.left, sb);
+        sb.append(node.value).append(" - ");
+        inorder(node.right, sb);
     }
 
     // --- TEST ---
-    public void levelOrder() {
+    public String levelOrder() {
+
+        StringBuilder sb = new StringBuilder();
 
         for (List<Node<T>> ele : levelOrder(this.root))
-            System.out.println(ele);
+            sb.append(ele).append("\n");
 
-        System.out.println();
+        return sb.toString();
     }
 
     private List<List<Node<T>>> levelOrder(Node<T> root) {
@@ -386,19 +365,11 @@ public class Seat<T> implements IntervalTree<T> {
         return ds;
     }
 
-    private void inorder(Node<T> root, StringBuilder sb) {
-        if (root == null)
-            return;
+    public String toString () {
+//        StringBuilder sb = new StringBuilder();
+//        inorder(this.root, sb);
+//        return sb.toString();
 
-        inorder(root.left, sb);
-        sb.append(root.value).append(" ");
-        inorder(root.right, sb);
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        inorder (this.root, sb);
-        return sb.toString();
+        return levelOrder();
     }
 }

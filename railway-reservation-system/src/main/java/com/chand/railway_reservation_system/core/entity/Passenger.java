@@ -2,10 +2,10 @@ package com.chand.railway_reservation_system.core.entity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Table(name = "ticket")
@@ -13,7 +13,6 @@ import java.util.Objects;
 public class Passenger implements Comparable<Passenger> {
 
     @Id
-    @UuidGenerator
     @Column(name = "PNR_id")
     private String PNRId;
 
@@ -42,6 +41,9 @@ public class Passenger implements Comparable<Passenger> {
     private List<Integer> seatsAllocation;
 
     @Transient
+    private int ticketAcceptance;
+
+    @Transient
     private int[] sourceAndDestination = new int[2];
 
     public Passenger(String PNRId, int[] sourceAndDestination, String source, String destination, String name, int travelersCount, int waitingCount, int initialTravelersCount, List<Integer> seatsAllocation) {
@@ -67,6 +69,7 @@ public class Passenger implements Comparable<Passenger> {
         this.initialTravelersCount = initialTravelersCount;
     }
 
+    // REST CONTROLLER is call this one only
     public Passenger(String name, String source, String destination, int travelersCount) {
         this.source = source;
         this.destination = destination;
@@ -76,6 +79,9 @@ public class Passenger implements Comparable<Passenger> {
 
         this.sourceAndDestination[0] = source.charAt(0) - 'A';
         this.sourceAndDestination[1] = source.charAt(1) - 'A';
+
+        // generate the UUID
+        this.PNRId = UUID.randomUUID().toString();
     }
 
     // testing only
@@ -89,6 +95,14 @@ public class Passenger implements Comparable<Passenger> {
 
         this.sourceAndDestination[0] = source.charAt(0) - 'A';
         this.sourceAndDestination[1] = destination.charAt(0) - 'A';
+    }
+
+    public void setTicketAcceptance(int ticketAcceptance) {
+        this.ticketAcceptance = ticketAcceptance;
+    }
+
+    public String getPNRId() {
+        return PNRId;
     }
 
     public int[] getSourceAndDestination() {

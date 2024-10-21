@@ -1,12 +1,29 @@
 package com.chand.railway_reservation_system.core.validator;
 
 import com.chand.railway_reservation_system.core.Constants;
-import com.chand.railway_reservation_system.core.datastructure.Seat;
-import com.chand.railway_reservation_system.core.entity.Ticket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 public class Validator {
+
+    public static Logger logger = LoggerFactory.getLogger(Validator.class);
+
+    public static final String NAME_PATTERN = "^[a-zA-Z\\s]{2,50}$";
+
+    public static <T> boolean genericValidator (T element, Predicate<T> predicate, String message) {
+        boolean tempVar = predicate.test(element);
+        if (!tempVar) logger.info(message);
+        return tempVar;
+    }
+
+    public static boolean nameValidator (String name, String message) {
+        boolean tempVar = name != null && name.matches(NAME_PATTERN);
+        if (!tempVar) logger.info(message);
+        return tempVar;
+    }
 
     public static BiPredicate<String, String> sourceAndDestinationValidator () {
         return (s, d) -> d.charAt(0) > s.charAt(0) && inTheRequiredRange(s) && inTheRequiredRange(d);
@@ -14,13 +31,5 @@ public class Validator {
 
     private static boolean inTheRequiredRange (String rangeString) {
         return rangeString.charAt(0) >= Constants.START.charAt(0) && rangeString.charAt(0) <= Constants.END.charAt(0);
-    }
-
-    public static BiPredicate<Ticket, Integer> cancelingCountValidator() {
-        return (t, c) -> c <= t.getTravelersCount() && c > 0;
-    }
-
-    public static BiPredicate<Seat<Ticket>, Ticket> preAddCheck () {
-        return Seat::preAddCheck;
     }
 }
