@@ -84,6 +84,8 @@ public class Passenger implements Comparable<Passenger> {
         this.PNRId = UUID.randomUUID().toString();
     }
 
+    public Passenger() {}
+
     // testing only
     public Passenger(String pnr, String name, String source, String destination, int travelersCount) {
         this.PNRId = pnr;
@@ -97,12 +99,22 @@ public class Passenger implements Comparable<Passenger> {
         this.sourceAndDestination[1] = destination.charAt(0) - 'A';
     }
 
+    public void buildSourceAndDestination () {
+        this.sourceAndDestination = new int[2];
+        this.sourceAndDestination[0] = source.charAt(0) - 'A';
+        this.sourceAndDestination[1] = destination.charAt(0) - 'A';
+    }
+
     public void setTicketAcceptance(int ticketAcceptance) {
         this.ticketAcceptance = ticketAcceptance;
     }
 
     public String getPNRId() {
         return PNRId;
+    }
+
+    public void setPNRId(String PNRId) {
+        this.PNRId = PNRId;
     }
 
     public int[] getSourceAndDestination() {

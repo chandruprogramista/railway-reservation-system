@@ -22,5 +22,5 @@ train:
     waiting-upper-bound: 50
   seats:
     start: 1
-    end: 9
+    end: 8
   coach-name: UR

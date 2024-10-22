@@ -21,6 +21,7 @@ public class PassengerBookingResponse {
     private int status;
 
     // specific to the after successful booking
+    private String PNRId;
     private int PassengerWaitingCount;
     private boolean PassengerAcceptance;
     private List<Integer> seatsAllocation;
@@ -38,6 +39,14 @@ public class PassengerBookingResponse {
         this.source = source;
         this.destination = destination;
         this.travelersCount = travelersCount;
+    }
+
+    public String getPNRId() {
+        return PNRId;
+    }
+
+    public void setPNRId(String PNRId) {
+        this.PNRId = PNRId;
     }
 
     public String getName() {
@@ -175,6 +184,7 @@ public class PassengerBookingResponse {
         // Passenger specific info after the successful booking
         private boolean PassengerAcceptance;
         private int PassengerWaitingCount;
+        private String PNRId;
 
         private List<Integer> seatsAllocation;
 
@@ -182,6 +192,11 @@ public class PassengerBookingResponse {
 
         public PassengerBookingResponseBuilder (PassengerBookingResponse PassengerBookingResponse) {
             this.PassengerBookingResponse = PassengerBookingResponse;
+        }
+
+        public PassengerBookingResponseBuilder setPNRId (String pnr) {
+            this.PassengerBookingResponse.setPNRId(pnr);
+            return this;
         }
 
         public PassengerBookingResponseBuilder setMessage(String message) {

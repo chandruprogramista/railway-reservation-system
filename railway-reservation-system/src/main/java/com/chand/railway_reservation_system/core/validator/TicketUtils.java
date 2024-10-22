@@ -36,7 +36,7 @@ public class TicketUtils {
         // test for max count validation
         if (!Validator.genericValidator(
                 passenger,
-                testPassenger -> testPassenger.getTravelersCount() > maxPeopleForSinglePNR && testPassenger.getTravelersCount() < minPeopleForSinglePNR,
+                testPassenger -> testPassenger.getTravelersCount() <= maxPeopleForSinglePNR && testPassenger.getTravelersCount() >= minPeopleForSinglePNR,
                 String.format("PASSENGER COUNT FOR A SINGLE PNR IS TOO HIGH OR TOO LOW `HINT PASSENGER 'MAX COUNT : %s' AND 'MIN COUNT : %s'`", maxPeopleForSinglePNR, minPeopleForSinglePNR)
         ) || !Validator.nameValidator(
                 passenger.getName(),
@@ -69,7 +69,7 @@ public class TicketUtils {
     public static boolean cancelSeats(int countToBeDeleted, Passenger passenger) {
         if (!Validator.genericValidator(
                 passenger,
-                testPassenger -> testPassenger.getTravelersCount() <= countToBeDeleted,
+                testPassenger -> testPassenger.getTravelersCount() <= countToBeDeleted && testPassenger.getTravelersCount() >= minPeopleForSinglePNR,
                 String.format("COUNT TO BE CANCEL IS TOO LARGE ARE TOO SMALL THAN ACTUAL PASSENGERS COUNT IN THE PNR `COUNT TO BE CANCEL : '%s', ACTUAL PASSENGERS COUNT : '%s'`", countToBeDeleted, passenger.getTravelersCount())
         )
         )

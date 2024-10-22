@@ -9,11 +9,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 // Need to load the mysql table to the actual SeatManager component for every refershing
 
 @RestController
-@RequestMapping("book")
+@RequestMapping("railway-reservation")
 public class TravelerRestController {
 
     PassengerService passengerService;
@@ -25,20 +26,18 @@ public class TravelerRestController {
 
     @GetMapping(value = "tickets")
     public List<Passenger> getAllTickets() {
-//        return this.ticketService.getAllTickets();
-        return null;
+        return this.passengerService.getAllBooking();
     }
 
     @GetMapping(value = "tickets/{pnrId}")
     public Passenger getTicket(@PathVariable(name = "pnrId") String pnrId) {
-//        return this.ticketService.getTicket(pnrId);
-        return null;
+        return this.passengerService.getPassenger(pnrId).orElse(null);
     }
 
-    @PostMapping(value = "ticket", produces = "application/json")
+    @PostMapping(value = "book", produces = "application/json")
     public ResponseEntity<PassengerBookingResponse> bookTicket(@RequestBody(required = true) Passenger ticket) {
 
-        PassengerBookingResponse ticketBookingResponse = PassengerBookingResponse.builder(ticket)
+        PassengerBookingResponse passengerBookingResponse = PassengerBookingResponse.builder(ticket)
                 .setName()
                 .setSource()
                 .setDestination()
@@ -46,16 +45,34 @@ public class TravelerRestController {
                 .build();
 
         // call the service layer
-        Passenger passenger = passengerService.bookSeats(ticket);
-        // add the seats that are allocated to this ticket
-        return new ResponseEntity<>(PassengerBookingResponse.builder(ticketBookingResponse)
-                .setTicketAcceptance(true)
-                .setPassengerWaitingCount(passenger.getWaitingCount())
-                .setAllocatedSeats(passenger.getSeatsAllocation())
-                .setMessage("The ticket is successfully booked")
-                .setStatus(HttpStatus.OK.value())
-                .setTimestamp(System.currentTimeMillis())
-                .build(), HttpStatus.OK);
+        Optional<Passenger> passenger = passengerService.bookSeats(ticket);
+
+        passenger.ifPresentOrElse(currentPassenger -> {
+                PassengerBookingResponse.builder(passengerBookingResponse)
+                        .setTicketAcceptance(true)
+                        .setPNRId(currentPassenger.getPNRId())
+                        .setPassengerWaitingCount(currentPassenger.getWaitingCount())
+                        .setAllocatedSeats(currentPassenger.getSeatsAllocation())
+                        .setMessage("HEY MAN YOU GOT A TICKET, SO GET READY FOR THE JOURNEY")
+                        .setStatus(HttpStatus.OK.value())
+                        .setTimestamp(System.currentTimeMillis())
+                        .build();
+            }, () -> {
+                PassengerBookingResponse.builder(passengerBookingResponse)
+                        .setTicketAcceptance(false)
+                        .setMessage("I THINK YOU HAVE SOME VALIDATION ISSUES")
+                        .setStatus(HttpStatus.NOT_ACCEPTABLE.value()).
+                        setTimestamp(System.currentTimeMillis())
+                        .build();
+            }
+        );
+
+        return new ResponseEntity<>(passengerBookingResponse, HttpStatus.OK);
+    }
+
+    @PostMapping("waitingStatus")
+    public int getWaitingStatus (@RequestParam String source, @RequestParam String destination) {
+        return this.passengerService.getWaitingCount(source, destination);
     }
 
     @PutMapping("cancel")
