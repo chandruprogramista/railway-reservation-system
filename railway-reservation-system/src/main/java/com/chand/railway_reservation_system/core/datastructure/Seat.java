@@ -1,5 +1,6 @@
 package com.chand.railway_reservation_system.core.datastructure;
 
+import javax.swing.plaf.IconUIResource;
 import java.util.*;
 
 public class Seat<T> implements Collection<T> {
@@ -60,23 +61,27 @@ public class Seat<T> implements Collection<T> {
 
     @Override
     public boolean contains(Object o) {
-        return contains(this.comparator, this.root, ((T)o));
+        return contains(this.comparator, this.root, ((T)o)) != null;
     }
 
-    private static <T> boolean contains (Comparator<T> comparator, Node<T> root, T element) {
+    private static <T> T contains (Comparator<T> comparator, Node<T> root, T element) {
         Node<T> tempRoot = root;
         while (tempRoot != null) {
-            if (element.equals(root.value))
-                return true;
-            int comparedValue = compareElements(comparator, element, root.value);
 
-            if (comparedValue == 0)
+            int comparedValue = compareElements(comparator, element, tempRoot.value);
+            if (comparedValue == 0) {
+                if (element.equals(tempRoot.value))
+                    return tempRoot.value;
                 break;
-
+            }
             tempRoot = comparedValue < 0 ? tempRoot.left : tempRoot.right;
         }
 
-        return false;
+        return null;
+    }
+
+    public T get (T element) {
+        return contains(this.comparator, this.root, element);
     }
 
     @Override
@@ -86,7 +91,27 @@ public class Seat<T> implements Collection<T> {
 
     @Override
     public Object[] toArray() {
-        return new Object[0];
+
+        Object[] toBeReturn = new Object[this.size];
+        Stack<Node<T>> stack = new Stack<>();
+        Node<T> tempNode = this.root;
+        int index = 0;
+
+        while (tempNode != null || !stack.isEmpty()) {
+            if (tempNode != null) {
+                stack.push(tempNode);
+                tempNode = tempNode.left;
+            }
+            else {
+                Node<T> temp = stack.pop();
+                toBeReturn[index++] = temp.value;
+                if (temp.right != null) {
+                    tempNode = temp.right;
+                }
+            }
+        }
+
+        return toBeReturn;
     }
 
     @Override
@@ -96,7 +121,7 @@ public class Seat<T> implements Collection<T> {
 
     @Override
     public boolean add(T element) {
-        Objects.requireNonNull(element);
+        Objects.requireNonNull(element, "Element is mustn't be null");
         // if root is null
         this.root = add(this.root, element);
 
@@ -287,6 +312,14 @@ public class Seat<T> implements Collection<T> {
         return root;
     }
 
+    public Integer getCurrentHeight () {
+        return this.root == null ? null : this.root.height;
+    }
+
+    public T peek () {
+        return this.root == null ? null : this.root.value;
+    }
+
     @Override
     public boolean containsAll(Collection<?> c) {
         return false;
@@ -327,15 +360,15 @@ public class Seat<T> implements Collection<T> {
 
         StringBuilder sb = new StringBuilder();
 
-        for (List<Node<T>> ele : levelOrder(this.root))
-            sb.append(ele).append("\n");
+        for (List<T> ele : levelOrder(this.root))
+            sb.append(ele);
 
         return sb.toString();
     }
 
-    private List<List<Node<T>>> levelOrder(Node<T> root) {
+    private List<List<T>> levelOrder(Node<T> root) {
 
-        List<List<Node<T>>> ds = new ArrayList<>();
+        List<List<T>> ds = new ArrayList<>();
 
         if (root == null)
             return ds;
@@ -346,11 +379,11 @@ public class Seat<T> implements Collection<T> {
         while (!queue.isEmpty()) {
 
             int size = queue.size();
-            LinkedList<Node<T>> list = new LinkedList<>();
+            LinkedList<T> list = new LinkedList<>();
 
             while (size-- > 0) {
                 Node<T> temp = queue.poll();
-                list.addLast(temp);
+                list.addLast(temp.value);
 
                 if (temp.left != null)
                     queue.add(temp.left);
@@ -370,6 +403,7 @@ public class Seat<T> implements Collection<T> {
 //        inorder(this.root, sb);
 //        return sb.toString();
 
-        return levelOrder();
+        return this.levelOrder();
+//        return Arrays.toString(this.toArray());
     }
 }

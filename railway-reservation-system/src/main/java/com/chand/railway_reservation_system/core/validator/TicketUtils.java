@@ -1,6 +1,8 @@
 package com.chand.railway_reservation_system.core.validator;
 
+import com.chand.railway_reservation_system.core.constants.SeatStatus;
 import com.chand.railway_reservation_system.core.entity.Passenger;
+import com.chand.railway_reservation_system.core.entity.Ticket;
 import com.chand.railway_reservation_system.core.manager.SeatsManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +26,7 @@ public class TicketUtils {
     private static String destination;
 
     @Autowired
-    public void setSeatsManager(SeatsManager seatsManager, @Value("${train.start}") String source, @Value("${train.end}") String destination, @Value("${train.count.max-passengers-for-single-booking}") int maxCount, @Value("${train.count.min-passengers-for-single-booking}") int minCount) {
+    public TicketUtils (SeatsManager seatsManager, @Value("${train.start}") String source, @Value("${train.end}") String destination, @Value("${train.count.max-passengers-for-single-booking}") int maxCount, @Value("${train.count.min-passengers-for-single-booking}") int minCount) {
         TicketUtils.seatsManager = seatsManager;
         TicketUtils.source = source;
         TicketUtils.destination = destination;
@@ -37,22 +39,22 @@ public class TicketUtils {
         if (!Validator.genericValidator(
                 passenger,
                 testPassenger -> testPassenger.getTravelersCount() <= maxPeopleForSinglePNR && testPassenger.getTravelersCount() >= minPeopleForSinglePNR,
-                String.format("PASSENGER COUNT FOR A SINGLE PNR IS TOO HIGH OR TOO LOW `HINT PASSENGER 'MAX COUNT : %s' AND 'MIN COUNT : %s'`", maxPeopleForSinglePNR, minPeopleForSinglePNR)
+                Optional.of(String.format("PASSENGER COUNT FOR A SINGLE PNR IS TOO HIGH OR TOO LOW `HINT PASSENGER 'MAX COUNT : %s' AND 'MIN COUNT : %s'`", maxPeopleForSinglePNR, minPeopleForSinglePNR))
         ) || !Validator.nameValidator(
                 passenger.getName(),
                 "YOUR NAME DOES NOT MEET THE CERTAIN CRITERIA"
         ) || !Validator.genericValidator(
                 passenger,
                 testPassenger -> testPassenger.getSource().compareTo(source) >= 0 && testPassenger.getSource().compareTo(destination) < 0,
-                String.format("SOURCE IS MUST BE IN THE REQUIRED RANGE `AND THE RANGE IS SOURCE : '%s', DESTINATION : '%s'`", source, destination)
+                Optional.of(String.format("SOURCE IS MUST BE IN THE REQUIRED RANGE `AND THE RANGE IS SOURCE : '%s', DESTINATION : '%s'`", source, destination))
         ) || !Validator.genericValidator(
                 passenger,
                 testPassenger -> testPassenger.getDestination().compareTo(source) > 0 && testPassenger.getDestination().compareTo(destination) <= 0,
-                String.format("DESTINATION IS MUST BE IN THE REQUIRED RANGE `AND THE RANGE IS SOURCE : '%s', DESTINATION : '%s'`", source, destination)
+                Optional.of(String.format("DESTINATION IS MUST BE IN THE REQUIRED RANGE `AND THE RANGE IS SOURCE : '%s', DESTINATION : '%s'`", source, destination))
         ) || !Validator.genericValidator(
                 passenger,
                 testPassenger -> testPassenger.getSource().compareTo(testPassenger.getDestination()) < 0,
-                String.format("SOURCE IS TOO LARGE THAN DESTINATION `SOURCE : '%s' AND DESTINATION : '%s'`", passenger.getSource(), passenger.getDestination())
+                Optional.of(String.format("SOURCE IS TOO LARGE THAN DESTINATION `SOURCE : '%s' AND DESTINATION : '%s'`", passenger.getSource(), passenger.getDestination()))
         )
         )
             return Optional.empty();
@@ -66,21 +68,24 @@ public class TicketUtils {
         seatsManager.bookSeats(seatsAllocation, passenger);
     }
 
-    public static boolean cancelSeats(int countToBeDeleted, Passenger passenger) {
+    public static SeatStatus cancelSeats(int countToBeDeleted, Passenger passenger) {
         if (!Validator.genericValidator(
                 passenger,
-                testPassenger -> testPassenger.getTravelersCount() <= countToBeDeleted && testPassenger.getTravelersCount() >= minPeopleForSinglePNR,
-                String.format("COUNT TO BE CANCEL IS TOO LARGE ARE TOO SMALL THAN ACTUAL PASSENGERS COUNT IN THE PNR `COUNT TO BE CANCEL : '%s', ACTUAL PASSENGERS COUNT : '%s'`", countToBeDeleted, passenger.getTravelersCount())
+                testPassenger -> testPassenger.getTravelersCount() >= countToBeDeleted && countToBeDeleted >= minPeopleForSinglePNR,
+                Optional.of(String.format("COUNT TO BE CANCEL IS TOO LARGE ARE TOO SMALL THAN ACTUAL PASSENGERS COUNT IN THE PNR `COUNT TO BE CANCEL : '%s', ACTUAL PASSENGERS COUNT : '%s'`", countToBeDeleted, passenger.getTravelersCount()))
         )
         )
-            return false;
-        seatsManager.cancelSeats(countToBeDeleted, passenger, true);
-        return true;
+            return SeatStatus.VALIDATION_ERROR;
+        return seatsManager.cancelSeats(countToBeDeleted, passenger, true);
     }
 
-    public static boolean cancelSeats (Passenger passenger) {
-        cancelSeats(passenger.getTravelersCount(), passenger);
-        return true;
+    public static Passenger cancelSeats (Passenger passenger) {
+        seatsManager.cancelSeats(passenger);
+        return passenger;
+    }
+
+    public static Passenger getCurrentState (Passenger passenger) {
+        return seatsManager.getCurrentState(passenger);
     }
 
     public static int getWaitingCount (String s, String d) {

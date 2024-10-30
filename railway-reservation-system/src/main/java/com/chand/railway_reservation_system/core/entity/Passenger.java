@@ -1,15 +1,23 @@
 package com.chand.railway_reservation_system.core.entity;
 
+import com.chand.railway_reservation_system.core.constants.Constants;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+@Builder
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "ticket")
-@JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Passenger implements Comparable<Passenger> {
 
     @Id
@@ -25,7 +33,6 @@ public class Passenger implements Comparable<Passenger> {
     @Column(name = "name")
     private String name;
 
-    // also used as a waiting count
     @Column(name = "travelers_count")
     private int travelersCount;
 
@@ -41,14 +48,15 @@ public class Passenger implements Comparable<Passenger> {
     private List<Integer> seatsAllocation;
 
     @Transient
-    private int ticketAcceptance;
+    @JsonIgnore
+    private int START = -1;
 
     @Transient
-    private int[] sourceAndDestination = new int[2];
+    @JsonIgnore
+    private int END = -1;
 
-    public Passenger(String PNRId, int[] sourceAndDestination, String source, String destination, String name, int travelersCount, int waitingCount, int initialTravelersCount, List<Integer> seatsAllocation) {
+    public Passenger(String PNRId, String source, String destination, String name, int travelersCount, int waitingCount, int initialTravelersCount, List<Integer> seatsAllocation) {
         this.PNRId = PNRId;
-        this.sourceAndDestination = sourceAndDestination;
         this.source = source;
         this.destination = destination;
         this.name = name;
@@ -58,9 +66,8 @@ public class Passenger implements Comparable<Passenger> {
         this.seatsAllocation = seatsAllocation;
     }
 
-    public Passenger(String PNRId, int[] sourceAndDestination, String source, String destination, String name, int travelersCount, int waitingCount, int initialTravelersCount) {
+    public Passenger(String PNRId, String source, String destination, String name, int travelersCount, int waitingCount, int initialTravelersCount) {
         this.PNRId = PNRId;
-        this.sourceAndDestination = sourceAndDestination;
         this.source = source;
         this.destination = destination;
         this.name = name;
@@ -77,15 +84,9 @@ public class Passenger implements Comparable<Passenger> {
         this.travelersCount = travelersCount;
         this.initialTravelersCount = travelersCount;
 
-        this.sourceAndDestination[0] = source.charAt(0) - 'A';
-        this.sourceAndDestination[1] = source.charAt(1) - 'A';
-
         // generate the UUID
         this.PNRId = UUID.randomUUID().toString();
     }
-
-    public Passenger() {}
-
     // testing only
     public Passenger(String pnr, String name, String source, String destination, int travelersCount) {
         this.PNRId = pnr;
@@ -94,91 +95,16 @@ public class Passenger implements Comparable<Passenger> {
         this.name = name;
         this.travelersCount = travelersCount;
         this.initialTravelersCount = travelersCount;
-
-        this.sourceAndDestination[0] = source.charAt(0) - 'A';
-        this.sourceAndDestination[1] = destination.charAt(0) - 'A';
     }
 
-    public void buildSourceAndDestination () {
-        this.sourceAndDestination = new int[2];
-        this.sourceAndDestination[0] = source.charAt(0) - 'A';
-        this.sourceAndDestination[1] = destination.charAt(0) - 'A';
+    @JsonIgnore
+    public int getSourceAsInt () {
+        return this.START == -1 ? (this.START = this.source.compareTo(Constants.START)) : this.START;
     }
 
-    public void setTicketAcceptance(int ticketAcceptance) {
-        this.ticketAcceptance = ticketAcceptance;
-    }
-
-    public String getPNRId() {
-        return PNRId;
-    }
-
-    public void setPNRId(String PNRId) {
-        this.PNRId = PNRId;
-    }
-
-    public int[] getSourceAndDestination() {
-        return sourceAndDestination;
-    }
-
-    public void setSourceAndDestination(int[] sourceAndDestination) {
-        this.sourceAndDestination = sourceAndDestination;
-    }
-
-    public List<Integer> getSeatsAllocation() {
-        return seatsAllocation;
-    }
-
-    public void setSeatsAllocation(List<Integer> seatsAllocation) {
-        this.seatsAllocation = seatsAllocation;
-    }
-
-    public int getWaitingCount() {
-        return waitingCount;
-    }
-
-    public void setWaitingCount(int waitingCount) {
-        this.waitingCount = waitingCount;
-    }
-
-    public int getInitialTravelersCount() {
-        return initialTravelersCount;
-    }
-
-    public void setInitialTravelersCount(int initialTravelersCount) {
-        this.initialTravelersCount = initialTravelersCount;
-    }
-
-    public int getTravelersCount() {
-        return travelersCount;
-    }
-
-    public void setTravelersCount(int travelersCount) {
-        this.travelersCount = travelersCount;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDestination() {
-        return destination;
-    }
-
-    public void setDestination(String destination) {
-        this.destination = destination;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
+    @JsonIgnore
+    public int getDestinationAsInt () {
+        return this.END == -1 ? (this.destination.compareTo(Constants.START)) : this.END;
     }
 
     @Override
@@ -186,27 +112,28 @@ public class Passenger implements Comparable<Passenger> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Passenger passenger = (Passenger) o;
-        return Objects.equals(PNRId, passenger.PNRId) && Objects.equals(source, passenger.source) && Objects.equals(destination, passenger.destination) && Objects.equals(name, passenger.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(PNRId, source, destination, name);
+        return Objects.equals(PNRId, passenger.PNRId) && Objects.equals(name, passenger.getName());
     }
 
     @Override
     public String toString() {
         return "Passenger{" +
-                "name='" + name + '\'' +
-                ", destination='" + destination + '\'' +
+                "PNRId='" + PNRId + '\'' +
                 ", source='" + source + '\'' +
-                ", PNRId='" + PNRId + '\'' +
+                ", destination='" + destination + '\'' +
+                ", name='" + name + '\'' +
+                ", travelersCount=" + travelersCount +
+                ", waitingCount=" + waitingCount +
+                ", initialTravelersCount=" + initialTravelersCount +
+                ", seatsAllocation=" + seatsAllocation +
                 '}';
     }
 
     @Override
-    public int compareTo(Passenger that) {
-        Objects.requireNonNull(that);
-        return this.sourceAndDestination[1] <= that.sourceAndDestination[0] ? -1 : this.sourceAndDestination[0] >= that.sourceAndDestination[1] ? 1 : 0;
+    public int compareTo(Passenger o) {
+        System.out.println("*** From the entity ***");
+        if (o == null)
+            return 0;
+        return this.getSource().compareTo(o.getDestination()) >= 0 ? 1 : this.getDestination().compareTo(o.getSource()) <= 0 ? -1 : 0;
     }
 }

@@ -1,9 +1,11 @@
 package com.chand.railway_reservation_system.core.validator;
 
-import com.chand.railway_reservation_system.core.Constants;
+import com.chand.railway_reservation_system.core.constants.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.text.html.Option;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -13,9 +15,9 @@ public class Validator {
 
     public static final String NAME_PATTERN = "^[a-zA-Z\\s]{2,50}$";
 
-    public static <T> boolean genericValidator (T element, Predicate<T> predicate, String message) {
+    public static <T> boolean genericValidator (T element, Predicate<T> predicate, Optional<String> message) {
         boolean tempVar = predicate.test(element);
-        if (!tempVar) logger.info(message);
+        if (!tempVar && message.isPresent()) logger.info(message.get());
         return tempVar;
     }
 

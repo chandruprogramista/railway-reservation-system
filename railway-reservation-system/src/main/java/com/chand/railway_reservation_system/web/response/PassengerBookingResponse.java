@@ -26,6 +26,8 @@ public class PassengerBookingResponse {
     private boolean PassengerAcceptance;
     private List<Integer> seatsAllocation;
 
+    public PassengerBookingResponse () {}
+
     public PassengerBookingResponse(String name, String source, String destination, int travelersCount, int PassengerWaitingCount) {
         this.name = name;
         this.source = source;
@@ -204,6 +206,11 @@ public class PassengerBookingResponse {
             return this;
         }
 
+        public PassengerBookingResponseBuilder setCustomMessage (boolean flag, String message1, String message2) {
+            this.PassengerBookingResponse.setMessage(flag ? message1 : message2);
+            return this;
+        }
+
         public PassengerBookingResponseBuilder setAllocatedSeats(List<Integer> seatsAllocation) {
             this.PassengerBookingResponse.setSeatsAllocation(seatsAllocation);
             return this;
@@ -211,11 +218,6 @@ public class PassengerBookingResponse {
 
         public PassengerBookingResponseBuilder setPassengerWaitingCount(int PassengerWaitingCount) {
             this.PassengerBookingResponse.setPassengerWaitingCount(PassengerWaitingCount);
-            return this;
-        }
-
-        public PassengerBookingResponseBuilder setStatus(int status) {
-            this.PassengerBookingResponse.setStatus(status);
             return this;
         }
 

@@ -12,4 +12,5 @@ public interface Queuer<T> {
     void remove (T element, OptionalInt waitingCount, Optional<Iterator<T>> iterator);
     void checkAndAdd (Predicate<T> predicate, Seat<T> seat);
     int getWaitingCount (String source, String destination);
+    T getCurrentState (T element);
 }

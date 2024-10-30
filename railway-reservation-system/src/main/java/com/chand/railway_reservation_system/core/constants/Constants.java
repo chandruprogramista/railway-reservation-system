@@ -1,4 +1,4 @@
-package com.chand.railway_reservation_system.core;
+package com.chand.railway_reservation_system.core.constants;
 
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
